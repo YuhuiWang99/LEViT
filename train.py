@@ -31,7 +31,7 @@ parser.add_argument('--batch-size', type=int, default=128,
                     help='training batch size per device (CPU/GPU).')
 parser.add_argument('--num-workers', type=int, default=8,
                     help='the number of workers for data loader')
-parser.add_argument('--dataset-root', type=str, default="/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid",
+parser.add_argument('--dataset-root', type=str, default="./dataset/",
                     help='the number of workers for data loader')
 parser.add_argument('--dataset', type=str, default="market1501",
                     help='the number of workers for data loader, market1501, dukemtmc, npdetected, nplabeled, msmt17, veri776, vehicleid')
