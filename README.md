@@ -6,8 +6,6 @@ LEViT: Locally Enhanced Vision Transformer for Efficient Object Re-identificatio
 
 ## Prepare Market1501 dataset
 1. Download the person datasets [Market1501](https://zheng-lab.cecs.anu.edu.au/Project/project_reid.html) to "./dataset" folder
-
-Then unzip them and rename them under the directory like
 ```
 dataset
 ├── Market-1501-v15.09.15.zip
