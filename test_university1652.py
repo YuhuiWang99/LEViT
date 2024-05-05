@@ -78,8 +78,7 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 64
-    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/University-Release/")
-    # data_dir = osp.expanduser("/data/benchmarks/reid/University-Release/")
+    data_dir = osp.expanduser("/home/wangyh/dataset/reid/University-Release/")
     os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
     query_set = []

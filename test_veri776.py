@@ -88,8 +88,7 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 64
-    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/VeRi/")
-    # data_dir = osp.expanduser("/data/benchmarks/reid/VeRi/")
+    data_dir = osp.expanduser("/home/wangyh/dataset/reid/")
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     test_set = [(osp.join(data_dir,'image_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'image_test') if "jpg" in line and "-1" not in line]

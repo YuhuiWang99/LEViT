@@ -16,10 +16,7 @@ if __name__=="__main__":
 #         LocalEnhanceAttention: count_LEViT_cell,
 #     }
 
-    # model = DBN(net="large", num_classes=751, num_parts=[1,2], LEinLEA='gconv')#  std=0.1
-    model = DBN(num_classes=751, num_parts=[1,2], net="large", LEinLEA='gconv', LEinLEFFN=False)
-    # model = MGN(num_classes=751, num_parts=[1,2,3], net="large")
-    # model = DBN_baseline(num_classes=751, num_parts=[1,2,3], net="small", LEinLEA='gconv', LEinLEFFN=True)
+    model = DBN(num_classes=751, num_parts=[1,2], net="large")
     model.eval()
     # input = torch.randn(1, 3, 256, 128)
     input = torch.randn(1, 3, 384, 128)

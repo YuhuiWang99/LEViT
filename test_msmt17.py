@@ -15,8 +15,7 @@ from os import path as osp
 
 def get_data(batch_size, test_set, query_set):
     transform_test = transforms.Compose([
-        # transforms.Resize(size=(256, 128)),
-        transforms.Resize(size=(384, 128)),
+        transforms.Resize(size=(256, 128)), # (384, 128)
         transforms.ToTensor(),
     ])
 
@@ -102,11 +101,9 @@ if __name__ == '__main__':
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', '/home/wangyh/paper/LEViT/TNNLS2024_LEViT_ReID/params/ema_l_384_msmt_ffn.pth')
-    # net = DBN(num_classes=1041, num_parts=[1,2], net="small")
+    mod_pth = osp.join('params', 'ema.pth')
+    net = DBN(num_classes=1041, num_parts=[1,2], net="small")
     # net = DBN(num_classes=1041, num_parts=[1,2], net="large")
-    # net = DBN(num_classes=1041, num_parts=[1,2], net="small", LEinLEA='gconv', LEinLEFFN=True)
-    net = DBN(num_classes=1041, num_parts=[1,2], net="large", LEinLEA='gconv', LEinLEFFN=False)
 
     net.load_state_dict(torch.load(mod_pth))
     net.cuda()

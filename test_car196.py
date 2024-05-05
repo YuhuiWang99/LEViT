@@ -64,7 +64,7 @@ def get_cluster_labels(x, nmb_clusters):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/CARS/")
+    data_dir = osp.expanduser("/home/wangyh/dataset/reid/CARS/")
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     label_to_items = defaultdict(list)
