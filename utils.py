@@ -22,6 +22,17 @@ def moving_average(net1, net2, ema_decay=0.9999):
         param1.data = param1.data * (1.0 - ema_decay) + param2.data * ema_decay
 
 
+def all_average(net_list):
+    net_base = net_list[0]
+    net_number = len(net_list)
+    for i in range(1, net_number):
+        for param1, param2 in zip(net_base.parameters(), net_list[i].parameters()):
+            param1.data = param1.data + param2.data
+    for param in net_base.parameters():
+        param.data = param.data / net_number
+    return net_base
+
+
 def _check_bn(module, flag):
     if issubclass(module.__class__, torch.nn.modules.batchnorm._BatchNorm):
         flag[0] = True
@@ -49,7 +60,7 @@ def _set_momenta(module, momenta):
         module.momentum = momenta[module]
 
 
-def bn_update(loader, model):
+def bn_update(loader, model, amp):
     """
         BatchNorm buffers update (if any).
         Performs 1 epochs to estimate buffers average using train dataset.
@@ -57,9 +68,9 @@ def bn_update(loader, model):
         :param model: model being update
         :return: None
     """
+    model = torch.nn.DataParallel(model).cuda().train()
     if not check_bn(model):
         return
-    model.train()
     momenta = {}
     model.apply(reset_bn)
     model.apply(lambda module: _get_momenta(module, momenta))
@@ -71,8 +82,12 @@ def bn_update(loader, model):
         momentum = b / (n + b)
         for module in momenta.keys():
             module.momentum = momentum
-
-        model(input)
+        if amp:
+            with torch.cuda.amp.autocast():
+                model(input)
+        else:
+            model(input)
         n += b
 
     model.apply(lambda module: _set_momenta(module, momenta))
+    return model

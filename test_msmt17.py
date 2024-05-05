@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-# import torchvision.transforms as transforms
-from cv2_transform import transforms 
+from cv2_transform import transforms
 from torch.utils.data import DataLoader
 import torch
 
 from network.dbn import DBN
-from data.data_read import ImageTxtDataset
+from data_read import ImageTxtDataset
 
 import time, os, sys
 import numpy as np
@@ -16,6 +15,7 @@ from os import path as osp
 
 def get_data(batch_size, test_set, query_set):
     transform_test = transforms.Compose([
+        # transforms.Resize(size=(256, 128)),
         transforms.Resize(size=(384, 128)),
         transforms.ToTensor(),
     ])
@@ -35,7 +35,8 @@ def extract_feature(net, dataloaders):
         n = img.shape[0]
         count += n
         print(count)
-        ff = np.zeros((n, 384 * 5))
+        ff = np.zeros((n, 768*5), dtype=np.float32) # large
+        # ff = np.zeros((n, 384*5), dtype=np.float32) # small
         for i in range(2):
             if(i==1):
                 img = torch.flip(img, [3])
@@ -88,9 +89,9 @@ def compute_mAP(index, good_index, junk_index):
 
 
 if __name__ == '__main__':
-    batch_size = 256
-    data_dir = osp.expanduser("./dataset/MSMT17/")
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    batch_size = 64
+    data_dir = osp.expanduser("/home/wangyh/dataset/reid/MSMT17/")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
 
     test_set = [(osp.join(data_dir,'bounding_box_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'bounding_box_test') if "jpg" in line and "-1" not in line]
@@ -101,8 +102,12 @@ if __name__ == '__main__':
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', 'swa.params')
-    net = DBN(num_classes=1041, num_parts=[1,2], std=0.2)
+    mod_pth = osp.join('params', '/home/wangyh/paper/LEViT/TNNLS2024_LEViT_ReID/params/ema_l_384_msmt_ffn.pth')
+    # net = DBN(num_classes=1041, num_parts=[1,2], net="small")
+    # net = DBN(num_classes=1041, num_parts=[1,2], net="large")
+    # net = DBN(num_classes=1041, num_parts=[1,2], net="small", LEinLEA='gconv', LEinLEFFN=True)
+    net = DBN(num_classes=1041, num_parts=[1,2], net="large", LEinLEA='gconv', LEinLEFFN=False)
+
     net.load_state_dict(torch.load(mod_pth))
     net.cuda()
     net.eval()

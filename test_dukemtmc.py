@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-# import torchvision.transforms as transforms
-from cv2_transform import transforms 
+from cv2_transform import transforms
 from torch.utils.data import DataLoader
 import torch
 
-from network.pcb import PCB
-from network.mgn import MGN
-from data.data_read import ImageTxtDataset
+from network.dbn import DBN
+from data_read import ImageTxtDataset
 
 import time, os, sys
 import numpy as np
@@ -17,7 +15,7 @@ from os import path as osp
 
 def get_data(batch_size, test_set, query_set):
     transform_test = transforms.Compose([
-        transforms.Resize(size=(384, 128)),
+        transforms.Resize(size=(256, 128)),
         transforms.ToTensor(),
     ])
 
@@ -36,7 +34,7 @@ def extract_feature(net, dataloaders):
         n = img.shape[0]
         count += n
         print(count)
-        ff = np.zeros((n, 256 * 7))
+        ff = np.zeros((n, 768*5), dtype=np.float32)
         for i in range(2):
             if(i==1):
                 img = torch.flip(img, [3])
@@ -90,7 +88,8 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("./dataset/DukeMTMC-reID/")
+    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/DukeMTMC-reID/")
+    # data_dir = osp.expanduser("/data/benchmarks/reid/DukeMTMC-reID/")
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
@@ -102,9 +101,10 @@ if __name__ == '__main__':
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', 'swa.params')
-    net = PCB(num_features=256, num_classes=702, num_parts=[6], net="resnet50")
-    # net = MGN(num_features=256, num_classes=702, num_parts=[1, 2, 3], net="resnet50")
+    mod_pth = osp.join('params', 'ema.pth')
+    # net = DBN(num_classes=702, num_parts=[1,2], net="small")
+    net = DBN(num_classes=702, num_parts=[1,2], net="large")
+    
     net.load_state_dict(torch.load(mod_pth))
     net.cuda()
     net.eval()

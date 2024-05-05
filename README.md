@@ -2,7 +2,7 @@
 LEViT: Locally Enhanced Vision Transformer for Efficient Object Re-identification.
 
 ## Architecture 
-![framework](figs/framework.jpg)
+![framework](figs/overview.png)
 
 ## Prepare Market1501 dataset
 1. Download the person datasets [Market1501](https://zheng-lab.cecs.anu.edu.au/Project/project_reid.html) to "./dataset" folder

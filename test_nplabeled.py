@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-# import torchvision.transforms as transforms
-from cv2_transform import transforms 
+from cv2_transform import transforms
 from torch.utils.data import DataLoader
 import torch
 
-from network.pcb import PCB
-from network.mgn import MGN
-from data.data_read import ImageTxtDataset
+from network.base import BASE
+from data_read import ImageTxtDataset
 
 import time, os, sys
 import numpy as np
@@ -36,7 +34,7 @@ def extract_feature(net, dataloaders):
         n = img.shape[0]
         count += n
         print(count)
-        ff = np.zeros((n, 256 * 7))
+        ff = np.zeros((n, 2048), dtype=np.float32)
         for i in range(2):
             if(i==1):
                 img = torch.flip(img, [3])
@@ -90,7 +88,8 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("./dataset/cuhk03-np/labeled/")
+    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/cuhk03-np/labeled/")
+    # data_dir = osp.expanduser("/data/benchmarks/reid/cuhk03-np/labeled/")
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
@@ -102,9 +101,8 @@ if __name__ == '__main__':
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', 'swa.params')
-    net = PCB(num_features=256, num_classes=767, num_parts=[6], net="resnet50")
-    # net = MGN(num_features=256, num_classes=767, num_parts=[1, 2, 3], net="resnet50")
+    mod_pth = osp.join('params', 'ema.pth')
+    net = BASE(num_features=0, num_classes=767, net="resnet50")
     net.load_state_dict(torch.load(mod_pth))
     net.cuda()
     net.eval()

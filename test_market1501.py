@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-# import torchvision.transforms as transforms
 from cv2_transform import transforms 
 from torch.utils.data import DataLoader
 import torch
 
 from network.dbn import DBN
-from data.data_read import ImageTxtDataset
+from data_read import ImageTxtDataset
 
 import time, os, sys
 import numpy as np
@@ -16,7 +15,7 @@ from os import path as osp
 
 def get_data(batch_size, test_set, query_set):
     transform_test = transforms.Compose([
-        transforms.Resize(size=(256, 128)),
+        transforms.Resize(size=(384, 128)),
         transforms.ToTensor(),
     ])
 
@@ -35,12 +34,20 @@ def extract_feature(net, dataloaders):
         n = img.shape[0]
         count += n
         print(count)
-        ff = np.zeros((n, 384*5))
+        # ff = np.zeros((n, 384*5), dtype=np.float32) # elsa
+        # ff = np.zeros((n, 768*5), dtype=np.float32) # dbn large
+        # ff = np.zeros((n, 384*5), dtype=np.float32) # dbn small
+        # ff = np.zeros((n, 6912), dtype=np.float32) # mgn large
+        ff = np.zeros((n, 3456), dtype=np.float32) # mgn small
+
+        # ff = np.zeros((n, 384), dtype=np.float32) # baseline small
+        # ff = np.zeros((n, 768), dtype=np.float32) # baseline large
         for i in range(2):
             if(i==1):
                 img = torch.flip(img, [3])
             with torch.no_grad():
                 f = torch.cat(net(img.cuda()), dim=1).detach().cpu().numpy()
+                # print("f:", f.shape)
             ff = ff+f
         features.append(ff)
     features = np.concatenate(features)
@@ -89,21 +96,42 @@ def compute_mAP(index, good_index, junk_index):
 
 if __name__ == '__main__':
     batch_size = 256
-    data_dir = osp.expanduser("./dataset/Market-1501-v15.09.15/")
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    data_dir = osp.expanduser("/home/wangyh/dataset/reid/market1501")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
-
-    test_set = [(osp.join(data_dir,'bounding_box_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'bounding_box_test') if "jpg" in line and "-1" not in line]
-    query_set = [(osp.join(data_dir,'query',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'query') if "jpg" in line]
+    test_set = [(osp.join(data_dir,'bounding_box_test',line), int(line.split('_')[0])) for line in os.listdir(osp.join(data_dir,'bounding_box_test')) if "jpg" in line and "-1" not in line]
+    query_set = [(osp.join(data_dir,'query',line), int(line.split('_')[0])) for line in os.listdir(osp.join(data_dir, 'query')) if "jpg" in line]
     
     test_cam, test_label = get_id(test_set)
     query_cam, query_label = get_id(query_set)
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', 'swa.params')
-    net = DBN(num_classes=751, num_parts=[1,2], std=0.2)
-    net.load_state_dict(torch.load(mod_pth), False)
+    LEinLEA = 'gconv' # swin
+    print("LEinLEA", LEinLEA)
+    # mod_pth = osp.join('params', f'ema_s_384_market_{LEinLEA}_0420.pth')
+    # net = DBN(num_classes=751, num_parts=[1,2], net="small", LEinLEA='conv', LEinLEFFN=True)
+    # net = DBN(num_classes=751, num_parts=[1,2], net="small", LEinLEA=LEinLEA, LEinLEFFN=True)
+    # net = DBN(num_classes=751, num_parts=[1,2], net="large")
+
+    # elsa
+    # from network.dbn_elsa import DBN as DBN_elsa
+    # mod_pth = osp.join('params', f'ema_384_market_gconv_dbn_elsa_0420.pth')
+    # net = DBN_elsa(num_classes=751, num_parts=[1,2])
+
+    # mgn
+    from network.mgn import MGN
+    mod_pth = osp.join('params', f'ema_s_384_market_gconv_mgn_0420.pth')
+    net = MGN(num_classes=751, num_parts=[1,2,3], net="small")
+
+    # baseline
+    # from network.dbn_baseline import DBN as DBN_baseline
+    # mod_pth = osp.join('params', f'ema_l_384_market_gconv_dbn_baseline_0421.pth')
+    # net = DBN_baseline(num_classes=751, num_parts=[1,2,3], net="large", LEinLEA=LEinLEA, LEinLEFFN=True)
+
+
+    net.load_state_dict(torch.load(mod_pth), True)
+    print("load model: strict = True")
     net.cuda()
     net.eval()
 

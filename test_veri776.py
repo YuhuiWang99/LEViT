@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division
 
-# import torchvision.transforms as transforms
-from cv2_transform import transforms 
+from cv2_transform import transforms
 from torch.utils.data import DataLoader
 import torch
 
 from network.dbn import DBN
-from data.data_read import ImageTxtDataset
+from data_read import ImageTxtDataset
 
 import time, os, sys
 import numpy as np
@@ -35,7 +34,7 @@ def extract_feature(net, dataloaders):
         n = img.shape[0]
         count += n
         print(count)
-        ff = np.zeros((n, 384 * 5))
+        ff = np.zeros((n, 768*5), dtype=np.float32)
         for i in range(2):
             if(i==1):
                 img = torch.flip(img, [3])
@@ -88,10 +87,10 @@ def compute_mAP(index, good_index, junk_index):
 
 
 if __name__ == '__main__':
-    batch_size = 256
-    data_dir = osp.expanduser("./dataset/VeRi/")
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
+    batch_size = 64
+    data_dir = osp.expanduser("/mnt/yrfs/yanrong/pvc-80688cb9-3d14-45f4-9be0-f37238d68d83/benchmarks/reid/VeRi/")
+    # data_dir = osp.expanduser("/data/benchmarks/reid/VeRi/")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     test_set = [(osp.join(data_dir,'image_test',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'image_test') if "jpg" in line and "-1" not in line]
     query_set = [(osp.join(data_dir,'image_query',line), int(line.split('_')[0])) for line in os.listdir(data_dir+'image_query') if "jpg" in line]
@@ -101,8 +100,9 @@ if __name__ == '__main__':
 
     ######################################################################
     # Load Collected data Trained model
-    mod_pth = osp.join('params', 'swa.params')
-    net = DBN(num_classes=576, num_parts=[1,2], net="levit", std=0.2)
+    mod_pth = osp.join('params', 'ema.pth')
+    # net = DBN(num_classes=576, num_parts=[1,2], net="small")
+    net = DBN(num_classes=576, num_parts=[1,2], net="large")
     net.load_state_dict(torch.load(mod_pth))
     net.cuda()
     net.eval()

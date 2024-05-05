@@ -4,17 +4,24 @@ from torch import nn
 
 
 class TripletLoss(nn.Module):
-    def __init__(self, margin=None):
+    def __init__(self, margin=None, norm=False):
         super(TripletLoss, self).__init__()
         self.margin = margin
+        self.norm = norm
         if margin is not None:
             self.ranking_loss = nn.MarginRankingLoss(margin=margin)
         else:
             self.ranking_loss = nn.SoftMarginLoss()
 
     def forward(self, inputs, targets):
+        with torch.autocast(enabled=False, device_type="cuda"):
+            return self._forward(inputs.float(), targets)
+
+    
+    def _forward(self, inputs, targets):
         n = inputs.size(0)
-        inputs = nn.functional.normalize(inputs, p=2.0, dim=1)
+        if self.norm:
+            inputs = nn.functional.normalize(inputs, p=2.0, dim=1)
         # Compute pairwise distance, replace by the official when merged
         dist = torch.pow(inputs, 2).sum(dim=1, keepdim=True).expand(n, n)
         dist = dist + dist.t()

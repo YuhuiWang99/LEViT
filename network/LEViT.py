@@ -1,11 +1,10 @@
-from audioop import bias
+# from audioop import bias
 import torch
 import torch.nn as nn
 from torch.nn import init
 from einops import rearrange
 from timm.models.layers import DropPath
 import torch.nn.functional as F
-
 
 class ConvX(nn.Module):
     def __init__(self, in_planes, out_planes, groups=1, kernel_size=3, stride=1):
@@ -39,7 +38,7 @@ class LocalEnhanceMLP(nn.Module):
             nn.Conv2d(h_dim, out_dim, 1, stride=1, bias=False),
             nn.BatchNorm2d(out_dim)
         )
-
+        self.stride = stride
 
     def forward(self, x):
         input = self.proj_in(x)
@@ -84,13 +83,13 @@ class LocalEnhanceAttention(nn.Module):
 
 class LocalEnhanceBlock(nn.Module):
     def __init__(self, dim, out_dim, num_heads, split_size=7, mlp_ratio=1, stride=1, drop_path=0.0, use_vit=True):
+        
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
         self.split_size = split_size
         self.mlp_ratio = mlp_ratio
         self.use_vit = use_vit == 1
-
         if self.use_vit:
             self.q = nn.Sequential(
                 nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1, groups=dim//4, bias=False),
@@ -108,6 +107,7 @@ class LocalEnhanceBlock(nn.Module):
                 nn.Conv2d(dim, dim, kernel_size=3, stride=1, padding=1, groups=dim//4, bias=False),
                 nn.BatchNorm2d(dim)
             )
+
 
             self.attns = LocalEnhanceAttention(dim, split_size=split_size, num_heads=num_heads)
             self.proj = nn.Sequential(
@@ -140,7 +140,6 @@ class LocalEnhanceBlock(nn.Module):
             x = x + self.drop_path(self.proj(self.attns(q, k, v) + v_spe))
 
         x = self.skip(x) + self.drop_path(self.mlp(x))
-
         return x
 
 
@@ -197,11 +196,11 @@ class LEViT(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward_features(self, x):
-        x = self.stem(x)
+        x = self.stem(x) # x4
 
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
+        x = self.stage1(x) # x8
+        x = self.stage2(x) # x16
+        x = self.stage3(x) # x32
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -211,3 +210,19 @@ class LEViT(nn.Module):
         x = self.forward_features(x)
         x = self.head(x)
         return x
+
+
+if __name__ == '__main__':
+    import os 
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+    from thop import profile, clever_format
+    model = LEViT(num_classes=1000, stem=16, embed_dim=96, mlp_ratio=1., layers=[4,7,4], num_heads=[1,2,4], split_size=[8,8,8], drop_path=0.05, use_vit=[1,1,0])
+
+    model.eval()
+    input = torch.randn(1, 3, 384, 128)
+    out = model(input)
+    print(out.shape)
+
+    macs, params = profile(model, inputs=(input, ))
+    macs, params = clever_format([macs, params], "%.3f")
+    print(macs, params)
