@@ -1,0 +1,1 @@
+python train.py --net small --img-height 256 --img-width 128 --batch-size 64 --lr 1.2e-1 --dataset market1501 --gpus 0,1 --epochs 5,75 --ema-ratio 0.80 --ema-extra 25 --instance-num 4 --erasing 0.45 --save-path params/levit-s_256_market.pth
